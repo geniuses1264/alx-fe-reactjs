@@ -1,10 +1,18 @@
-function UserProfile(props){
+import React, { useContext } from "react";
+import UserContext from "./UserContext";
+
+function UserProfile() {
+  // Get user data from context
+  const userData = useContext(UserContext);
+
   return (
-    <div className="container">
-    <h2 className="header">{props.name}</h2>
-    <p className="age">Age: {props.age}</p>
-    <p className="bio">Bio: {props.bio}</p>
+    <div style={{ padding: "10px", border: "2px solid #ccc", marginTop: "10px" }}>
+      <h2>User Profile</h2>
+      <p><strong>Name:</strong> {userData.name}</p>
+      <p><strong>Email:</strong> {userData.email}</p>
+      <p><strong>Role:</strong> {userData.role}</p>
     </div>
-  )
+  );
 }
+
 export default UserProfile;

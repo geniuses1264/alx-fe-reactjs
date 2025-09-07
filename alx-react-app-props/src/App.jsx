@@ -1,10 +1,10 @@
 
 import './App.css'
-{/*import WelcomeMessage from './components/WelcomeMessage.jsx';
+import WelcomeMessage from './components/WelcomeMessage.jsx';
 import Header from './components/Header';
 import MainContent from './components/MainContent';
 import Footer from './components/Footer'
-import UserProfile from './components/UserProfile'; */}
+import UserProfile from './components/UserProfile'; 
   import UserContext from './components/UserContext.js'; 
   import ProfilePage from './ProfilePage';
  
@@ -20,11 +20,11 @@ function App() {
       <UserContext.Provider value={userData } > 
       <ProfilePage />
       </UserContext.Provider>
-      {/*<WelcomeMessage />
+      <WelcomeMessage />
       <Header />
       <MainContent />
       <Footer />
-      <UserProfile name="Alice" age="25" bio="Loves hiking and photography" />*/}
+      <UserProfile name="Alice" age="25" bio="Loves hiking and photography" />
     </>
   )
 }
