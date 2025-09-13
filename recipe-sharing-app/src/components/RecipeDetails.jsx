@@ -1,7 +1,6 @@
-// src/components/RecipeDetails.jsx
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import useRecipeStore from './recipeStore';
+import useRecipeStore from '../Store/recipeStore';
 
 const RecipeDetails = () => {
   const { id } = useParams();
@@ -19,7 +18,7 @@ const RecipeDetails = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
 
-  // Populate form fields when recipe loads
+  // Wait until recipe exists before populating fields
   useEffect(() => {
     if (recipe) {
       setTitle(recipe.title);
@@ -27,6 +26,7 @@ const RecipeDetails = () => {
     }
   }, [recipe]);
 
+  // If recipe is not found, show a message
   if (!recipe) return <p>Recipe not found.</p>;
 
   const handleUpdate = (e) => {
