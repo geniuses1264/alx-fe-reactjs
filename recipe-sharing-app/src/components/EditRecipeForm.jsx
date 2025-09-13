@@ -1,31 +1,55 @@
-import React, { useState } from 'react';
-import useRecipeStore from './recipeStore';
+// src/components/EditRecipeForm.jsx
+import { useState, useEffect } from 'react';
+import useRecipeStore from '../Store/recipeStore';
 
-const EditRecipeButton = ({ recipe }) => {
-  const updateRecipe = useRecipeStore((state) => state.updateRecipe);
-  const [isEditing, setIsEditing] = useState(false);
-  const [title, setTitle] = useState(recipe.title);
-  const [description, setDescription] = useState(recipe.description);
+const EditRecipeForm = ({ recipeId, onClose }) => {
+  const recipe = useRecipeStore(state =>
+    state.recipes.find(r => r.id === recipeId)
+  );
 
-  const handleSave = () => {
-    updateRecipe(recipe.id, { title, description });
-    setIsEditing(false);
+  const updateRecipe = useRecipeStore(state => state.updateRecipe);
+
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (recipe) {
+      setTitle(recipe.title);
+      setDescription(recipe.description);
+    }
+  }, [recipe]);
+
+  if (!recipe) return <p>Recipe not found.</p>;
+
+  const handleSubmit = (event) => {
+    event.preventDefault(); // ✅ required
+    if (!title.trim() || !description.trim()) {
+      alert('Title and description cannot be empty');
+      return;
+    }
+    updateRecipe({ id: recipeId, title, description });
+    onClose(); // optional: close form after update
   };
 
   return (
-    <div>
-      {isEditing ? (
-        <div>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea value={description} onChange={(e) => setDescription(e.target.value)} />
-          <button onClick={handleSave}>Save</button>
-          <button onClick={() => setIsEditing(false)}>Cancel</button>
-        </div>
-      ) : (
-        <button onClick={() => setIsEditing(true)}>Edit Recipe</button>
-      )}
-    </div>
+    <form onSubmit={handleSubmit}>
+      <input
+        type="text"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder="Recipe Title"
+        required
+      />
+      <textarea
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Recipe Description"
+        required
+      />
+      <button type="submit">Save</button>
+      <button type="button" onClick={onClose}>Cancel</button>
+    </form>
   );
 };
 
-export default EditRecipeButton;
+export default EditRecipeForm;
