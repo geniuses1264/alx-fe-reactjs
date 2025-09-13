@@ -2,23 +2,45 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import useRecipeStore from '../Store/recipeStore';
 
+
+/*
+RecipeDetails.jsx
+
+This component should do the following:
+
+1. Get the recipe ID from the URL using useParams.
+2. Get the recipe from the Zustand store using useRecipeStore.
+3. Display the recipe title and description.
+4. Show "Edit" and "Delete" buttons only if the recipe exists.
+5. When clicking "Edit":
+   - Show a form pre-filled with the recipe title and description.
+   - Allow updating the recipe in the store.
+   - Validate that title and description are not empty.
+6. When clicking "Delete":
+   - Delete the recipe from the store.
+   - Navigate back to the home page.
+7. Use useEffect to populate the form fields after recipe is loaded.
+8. Use proper conditional rendering to prevent errors if recipe is undefined.
+
+Hints for Copilot:
+- Use useState for isEditing, title, description
+- Use useNavigate from react-router-dom for redirecting after delete
+- Make sure updateRecipe and deleteRecipe come from useRecipeStore
+- Wrap update/delete logic in functions
+*/
 const RecipeDetails = () => {
   const { id } = useParams();
-  const recipeId = Number(id);
   const navigate = useNavigate();
-
   const recipe = useRecipeStore((state) =>
-    state.recipes.find((r) => r.id === recipeId)
+    state.recipes.find((r) => r.id === parseInt(id))
   );
-
   const updateRecipe = useRecipeStore((state) => state.updateRecipe);
   const deleteRecipe = useRecipeStore((state) => state.deleteRecipe);
-
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(''); 
+  const [error, setError] = useState('');
 
-  // Wait until recipe exists before populating fields
   useEffect(() => {
     if (recipe) {
       setTitle(recipe.title);
@@ -26,58 +48,50 @@ const RecipeDetails = () => {
     }
   }, [recipe]);
 
-  // If recipe is not found, show a message
-  if (!recipe) return <p>Recipe not found.</p>;
-
-  const handleUpdate = (e) => {
-    e.preventDefault();
-    if (!title.trim() || !description.trim()) {
-      alert('Title and description cannot be empty');
+  const handleUpdate = () => {
+    if (title.trim() === '' || description.trim() === '') {
+      setError('Title and Description cannot be empty.');
       return;
     }
-    updateRecipe({ id: recipeId, title, description });
+    updateRecipe({ id: recipe.id, title, description });
     setIsEditing(false);
-  };
-
+    setError('');
+  };  
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this recipe?')) {
-      deleteRecipe(recipeId);
-      navigate('/');
-    }
-  };
-
+    deleteRecipe(recipe.id);
+    navigate('/');
+  }
+  if (!recipe) {
+    return <div>Recipe not found.</div>;
+  }
   return (
-    <div style={{ padding: '20px', border: '1px solid #ddd', marginTop: '20px' }}>
+   
+     <div>
       {isEditing ? (
-        <form onSubmit={handleUpdate}>
+        <div>
           <input
-            type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="Recipe Title"
-            style={{ display: 'block', marginBottom: '10px', width: '300px' }}
           />
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="Recipe Description"
-            style={{ display: 'block', marginBottom: '10px', width: '300px', height: '100px' }}
           />
-          <button type="submit" style={{ marginRight: '10px' }}>Save</button>
-          <button type="button" onClick={() => setIsEditing(false)}>Cancel</button>
-        </form>
+          {error && <div style={{ color: 'red' }}>{error}</div>}
+          <button onClick={handleUpdate}>Save</button>
+          <button onClick={() => setIsEditing(false)}>Cancel</button>
+        </div>
       ) : (
-        <>
-          <h1>{recipe.title}</h1>
+        <div>
+          <h2>{recipe.title}</h2>
           <p>{recipe.description}</p>
-          <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-            <button onClick={() => setIsEditing(true)}>Edit</button>
-            <button onClick={handleDelete}>Delete</button>
-          </div>
-        </>
+          <button onClick={() => setIsEditing(true)}>Edit</button>
+          <button onClick={handleDelete}>Delete</button>
+        </div>
       )}
     </div>
   );
-};
+}
+export default RecipeDetails;    
 
-export default RecipeDetails;
+
