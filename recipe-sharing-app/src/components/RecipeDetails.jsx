@@ -3,31 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import useRecipeStore from './recipeStore';
 
 
-/*
-RecipeDetails.jsx
-
-This component should do the following:
-
-1. Get the recipe ID from the URL using useParams.
-2. Get the recipe from the Zustand store using useRecipeStore.
-3. Display the recipe title and description.
-4. Show "Edit" and "Delete" buttons only if the recipe exists.
-5. When clicking "Edit":
-   - Show a form pre-filled with the recipe title and description.
-   - Allow updating the recipe in the store.
-   - Validate that title and description are not empty.
-6. When clicking "Delete":
-   - Delete the recipe from the store.
-   - Navigate back to the home page.
-7. Use useEffect to populate the form fields after recipe is loaded.
-8. Use proper conditional rendering to prevent errors if recipe is undefined.
-
-Hints for Copilot:
-- Use useState for isEditing, title, description
-- Use useNavigate from react-router-dom for redirecting after delete
-- Make sure updateRecipe and deleteRecipe come from useRecipeStore
-- Wrap update/delete logic in functions
-*/
 const RecipeDetails = () => {
 
   const { id } = useParams();
@@ -69,7 +44,7 @@ const RecipeDetails = () => {
   const handleDelete = () => {
     deleteRecipe(recipe.id);
     navigate('/');
-    
+
   }
   if (!recipe) {
     return <div>Recipe not found.</div>;

@@ -1,25 +1,30 @@
-// src/App.jsx
-import AddRecipeForm from './components/AddRecipeForm';
-import RecipeList from './components/RecipeList';
-import FavoritesList from './components/FavoritesList';
-import RecommendationsList from './components/RecommendationsList';
-import SearchBar from './components/SearchBar';
-
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import RecipeList from "./components/RecipeList";
+import RecipeDetail from "./components/RecipeDetails"; // create this file if it doesn’t exist yet
+import SearchBar from "./components/SearchBar"; // optional, if you made SearchBar
+import AddRecipeForm from "./components/AddRecipeForm"; // optional, if you made AddRecipeForm
+import RecommendationsList from "./components/RecommendationsList"; // optional, if you made RecommendationsList
+import EditRecipeForm from "./components/EditRecipeForm"; // optional, if you made EditRecipeForm
+import DeleteRecipeButton from "./components/DeleteRecipeButton"; // optional, if you made DeleteRecipeButton
+import "./App.css";
 
 function App() {
   return (
-    // style the app container
+    <Router>
+      <div style={{ maxWidth: "800px", margin: "0 auto", padding: "20px" }}>
+        <h1>🍲 Recipe Sharing App</h1>
+        <SearchBar />
+        <AddRecipeForm />
+        <RecommendationsList />
+        <EditRecipeForm />
+        <DeleteRecipeButton />
 
-      
-    <div className="App" style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif', backgroundColor: '#f9f9f9', color: '#333', }}>
-      <h1>Recipe Sharing App</h1>
-      <AddRecipeForm />
-      <SearchBar />
-      <RecipeList />
-      <FavoritesList />
-      <RecommendationsList />
-    </div>
+        <Routes>
+          <Route path="/" element={<RecipeList />} />
+          <Route path="/recipes/:id" element={<RecipeDetail />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
