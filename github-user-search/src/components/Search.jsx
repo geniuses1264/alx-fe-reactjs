@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { searchGithubUsers } from '../services/githubService';
+import { searchGithubUsers, fetchUserData } from '../services/githubService';
 
 export default function Search() {
   const [query, setQuery] = useState('');
@@ -11,12 +11,10 @@ export default function Search() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [hasSearched, setHasSearched] = useState(false); // new
+  const [hasSearched, setHasSearched] = useState(false);
 
   async function doSearch({ nextPage = 1, append = false } = {}) {
-    console.log('[Search] doSearch params:', { query, location, minRepos, perPage, nextPage, append });
-
-    setHasSearched(true); // mark that a search was attempted
+    setHasSearched(true);
     setError(null);
     const isFresh = nextPage === 1 && !append;
     if (isFresh && !query.trim() && !location.trim() && (!minRepos || Number(minRepos) <= 0)) {
@@ -33,21 +31,28 @@ export default function Search() {
         page: nextPage,
         per_page: perPage
       });
-      console.log('[Search] service response:', resp);
 
       setTotal(resp.total_count || 0);
       setPage(nextPage);
 
-      if (append) {
-        setResults(prev => [...prev, ...(resp.items || [])]);
-      } else {
-        setResults(resp.items || []);
-      }
+      if (append) setResults(prev => [...prev, ...(resp.items || [])]);
+      else setResults(resp.items || []);
     } catch (err) {
-      console.error('[Search] search error:', err);
       setError(err?.message || 'Search failed');
     } finally {
       setLoading(false);
+    }
+  }
+
+  // uses fetchUserData from service to fetch full user info on demand
+  async function viewUser(username) {
+    try {
+      const data = await fetchUserData(username);
+      console.log('[Search] fetchUserData result:', data);
+      alert(`${data.login}\nLocation: ${data.location || 'N/A'}\nRepos: ${data.public_repos ?? 'N/A'}`);
+    } catch (err) {
+      console.error('[Search] viewUser error:', err);
+      alert('Failed to load user details.');
     }
   }
 
@@ -123,9 +128,8 @@ export default function Search() {
 
         <div className="text-sm text-gray-600 mb-2">Total results: {total}</div>
 
-        {/* show "not found" message after a search when there are no results */}
         {hasSearched && !loading && !error && results.length === 0 && (
-          <div className="text-center text-gray-600 mt-4">Looks like we cant find the user.</div>
+          <div className="text-center text-gray-600 mt-4">Looks like we can't find the user.</div>
         )}
 
         <ul className="space-y-4">
@@ -151,6 +155,16 @@ export default function Search() {
                     <span className="mx-2">•</span>
                     <span>{details.public_repos != null ? `${details.public_repos} repos` : 'Repos unknown'}</span>
                   </div>
+                </div>
+
+                <div className="ml-4">
+                  <button
+                    onClick={() => viewUser(user.login)}
+                    className="inline-flex items-center px-3 py-1 border border-gray-300 rounded-md text-sm bg-white hover:bg-gray-50"
+                    type="button"
+                  >
+                    Details
+                  </button>
                 </div>
               </li>
             );
