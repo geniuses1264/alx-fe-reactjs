@@ -14,7 +14,7 @@ function App() {
      name: "Jane Doe", 
      email: "jane.doe@example.com",
       role: "Frontend Developer" 
-  };
+  }
   return (
     <>
       <UserContext.Provider value={userData } > 
