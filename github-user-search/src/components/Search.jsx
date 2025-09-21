@@ -11,10 +11,12 @@ export default function Search() {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [hasSearched, setHasSearched] = useState(false); // new
 
   async function doSearch({ nextPage = 1, append = false } = {}) {
     console.log('[Search] doSearch params:', { query, location, minRepos, perPage, nextPage, append });
 
+    setHasSearched(true); // mark that a search was attempted
     setError(null);
     const isFresh = nextPage === 1 && !append;
     if (isFresh && !query.trim() && !location.trim() && (!minRepos || Number(minRepos) <= 0)) {
@@ -120,6 +122,11 @@ export default function Search() {
         {error && <div className="text-red-600 mb-4">{error}</div>}
 
         <div className="text-sm text-gray-600 mb-2">Total results: {total}</div>
+
+        {/* show "not found" message after a search when there are no results */}
+        {hasSearched && !loading && !error && results.length === 0 && (
+          <div className="text-center text-gray-600 mt-4">Looks like we can't find the user.</div>
+        )}
 
         <ul className="space-y-4">
           {results.map(user => {
