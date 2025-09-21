@@ -14,7 +14,7 @@ try {
 } catch (e) {
   console.warn('[githubService] env read error', e);
 }
-console.log('[githubService] API_BASE =', API_BASE);
+
 
 // Do not log or expose tokens
 const GITHUB_TOKEN = import.meta.env.VITE_APP_GITHUB_API_KEY || '';
@@ -29,16 +29,7 @@ const api = axios.create({
   }
 });
 
-// optional: lightweight request logger for debugging (doesn't print sensitive headers)
-api.interceptors.request.use(cfg => {
-  try {
-    const u = new URL(cfg.url || '', cfg.baseURL);
-    console.log('[githubService] REQUEST ->', cfg.method?.toUpperCase(), u.href);
-  } catch (err) {
-  console.warn('[githubService] URL build failed', err.message);
-}
-  return cfg;
-}, e => Promise.reject(e));
+
 
 const userCache = new Map();
 
@@ -86,7 +77,7 @@ async function searchGithubUsers({ query = '', location = '', minRepos = 0, page
     // Log the final URL for debugging
     const logUrl = new URL('/search/users', API_BASE);
     Object.entries(params).forEach(([k, v]) => logUrl.searchParams.set(k, String(v)));
-    console.log('[githubService] searchGithubUsers URL =', logUrl.href);
+    
 
     const res = await api.get('/search/users', { params });
     const data = res.data || { total_count: 0, items: [] };
@@ -120,7 +111,7 @@ async function searchGithubRepos(query) {
     const params = { q: query };
     const logUrl = new URL('/search/repositories', API_BASE);
     logUrl.searchParams.set('q', query);
-    console.log('[githubService] searchGithubRepos URL =', logUrl.href);
+    
 
     const res = await api.get('/search/repositories', { params });
     return res.data;

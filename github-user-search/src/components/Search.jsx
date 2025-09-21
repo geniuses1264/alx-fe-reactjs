@@ -48,7 +48,7 @@ export default function Search() {
   async function viewUser(username) {
     try {
       const data = await fetchUserData(username);
-      console.log('[Search] fetchUserData result:', data);
+     
       alert(`${data.login}\nLocation: ${data.location || 'N/A'}\nRepos: ${data.public_repos ?? 'N/A'}`);
     } catch (err) {
       console.error('[Search] viewUser error:', err);
