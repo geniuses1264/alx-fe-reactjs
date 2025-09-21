@@ -112,7 +112,7 @@ export default function Search() {
           </select>
         </div>
 
-        <div className="sm:col-span-1 flex items-end">
+        <div className="sm:col-span-1 flex items-center justify-center gap-10">
           <button
             type="submit"
             className="w-full inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700"
