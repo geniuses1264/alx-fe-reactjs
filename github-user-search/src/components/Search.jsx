@@ -125,7 +125,7 @@ export default function Search() {
 
         {/* show "not found" message after a search when there are no results */}
         {hasSearched && !loading && !error && results.length === 0 && (
-          <div className="text-center text-gray-600 mt-4">Looks like we can't find the user.</div>
+          <div className="text-center text-gray-600 mt-4">Looks like we cant find the user.</div>
         )}
 
         <ul className="space-y-4">
