@@ -1,50 +1,72 @@
+
+import axios from 'axios';
+
 const DEFAULT_API = 'https://api.github.com';
 
-// read Vite envs safely and only accept absolute http(s) URLs
+// Resolve API base from Vite envs — accept only absolute http(s) URLs
 let API_BASE = DEFAULT_API;
 try {
   const raw = (import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_BASE || '').toString().trim();
   if (raw) {
-    if (/^https?:\/\//i.test(raw)) {
-      API_BASE = raw.replace(/\/$/, '');
-    } else {
-      console.warn('[githubService] VITE_API_BASE* is set but not an absolute URL — ignoring:', raw);
-    }
+    if (/^https?:\/\//i.test(raw)) API_BASE = raw.replace(/\/$/, '');
+    else console.warn('[githubService] ignored non-absolute VITE_API_BASE*:', raw);
   }
 } catch (e) {
-  console.warn('[githubService] error reading env vars', e);
+  console.warn('[githubService] env read error', e);
 }
-
 console.log('[githubService] API_BASE =', API_BASE);
 
-const githubToken = import.meta.env.VITE_APP_GITHUB_API_KEY || '';
-const defaultHeaders = {
-  Accept: 'application/vnd.github.v3+json',
-  ...(githubToken ? { Authorization: `Bearer ${githubToken}` } : {})
-};
+// Do not log or expose tokens
+const GITHUB_TOKEN = import.meta.env.VITE_APP_GITHUB_API_KEY || '';
+
+const api = axios.create({
+  baseURL: API_BASE,
+  timeout: 15000,
+  headers: {
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'github-user-search', // helpful for some endpoints
+    ...(GITHUB_TOKEN ? { Authorization: `Bearer ${GITHUB_TOKEN}` } : {})
+  }
+});
+
+// optional: lightweight request logger for debugging (doesn't print sensitive headers)
+api.interceptors.request.use(cfg => {
+  try {
+    const u = new URL(cfg.url || '', cfg.baseURL);
+    console.log('[githubService] REQUEST ->', cfg.method?.toUpperCase(), u.href);
+  } catch (err) {
+  console.warn('[githubService] URL build failed', err.message);
+}
+  return cfg;
+}, e => Promise.reject(e));
 
 const userCache = new Map();
 
+/**
+ * Fetch full user details (cached)
+ * @param {string} username
+ */
 async function fetchUserDetails(username) {
+  if (!username) return null;
   if (userCache.has(username)) return userCache.get(username);
 
-  const url = new URL(`/users/${encodeURIComponent(username)}`, API_BASE).href;
-  console.log('[githubService] fetchUserDetails URL =', url);
-  const res = await fetch(url, { headers: defaultHeaders });
-
-  if (!res.ok) {
+  try {
+    const path = `/users/${encodeURIComponent(username)}`;
+    const res = await api.get(path);
+    userCache.set(username, res.data);
+    return res.data;
+  } catch (err) {
+    console.warn('[githubService] fetchUserDetails failed for', username, err?.response?.status || err.message);
     const fallback = { login: username, public_repos: null, location: null, html_url: `https://github.com/${username}` };
     userCache.set(username, fallback);
     return fallback;
   }
-
-  const json = await res.json();
-  userCache.set(username, json);
-  return json;
 }
+// alias for compatibility with existing code that expects fetchUserData
+const fetchUserData = fetchUserDetails;
 
 /**
- * Advanced user search
+ * Advanced user search using GitHub Search API
  * params: { query, location, minRepos, page, per_page }
  */
 async function searchGithubUsers({ query = '', location = '', minRepos = 0, page = 1, per_page = 30 } = {}) {
@@ -58,43 +80,56 @@ async function searchGithubUsers({ query = '', location = '', minRepos = 0, page
   }
 
   const q = qParts.join(' ');
-  const url = new URL('/search/users', API_BASE);
-  url.searchParams.set('q', q);
-  url.searchParams.set('page', String(page));
-  url.searchParams.set('per_page', String(per_page));
+  const params = { q, page, per_page };
 
-  console.log('[githubService] searchGithubUsers URL =', url.href);
-  const res = await fetch(url.href, { headers: defaultHeaders });
+  try {
+    // Log the final URL for debugging
+    const logUrl = new URL('/search/users', API_BASE);
+    Object.entries(params).forEach(([k, v]) => logUrl.searchParams.set(k, String(v)));
+    console.log('[githubService] searchGithubUsers URL =', logUrl.href);
 
-  if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`GitHub API error: ${res.status} ${res.statusText} ${text}`);
+    const res = await api.get('/search/users', { params });
+    const data = res.data || { total_count: 0, items: [] };
+
+    // Enrich each item with full user details (cached)
+    const itemsWithDetails = await Promise.all(
+      (data.items || []).map(async item => {
+        const details = await fetchUserDetails(item.login);
+        return { ...item, details };
+      })
+    );
+
+    return {
+      total_count: data.total_count,
+      incomplete_results: data.incomplete_results,
+      items: itemsWithDetails
+    };
+  } catch (err) {
+    const status = err?.response?.status || 'ERR';
+    const message = err?.response?.data?.message || err.message;
+    throw new Error(`GitHub API error: ${status} ${message}`);
   }
-
-  const data = await res.json();
-
-  // Enrich items with user details (one request per item). Cached by fetchUserDetails.
-  const itemsWithDetails = await Promise.all(
-    (data.items || []).map(async item => {
-      const details = await fetchUserDetails(item.login);
-      return { ...item, details };
-    })
-  );
-
-  return {
-    total_count: data.total_count,
-    incomplete_results: data.incomplete_results,
-    items: itemsWithDetails
-  };
 }
 
+/**
+ * Repository search helper
+ */
 async function searchGithubRepos(query) {
-  const url = new URL('/search/repositories', API_BASE);
-  url.searchParams.set('q', query);
-  console.log('[githubService] searchGithubRepos URL =', url.href);
-  const response = await fetch(url.href, { headers: defaultHeaders });
-  const data = await response.json();
-  return data;
+  if (!query || !String(query).trim()) throw new Error('Repository search requires a query.');
+  try {
+    const params = { q: query };
+    const logUrl = new URL('/search/repositories', API_BASE);
+    logUrl.searchParams.set('q', query);
+    console.log('[githubService] searchGithubRepos URL =', logUrl.href);
+
+    const res = await api.get('/search/repositories', { params });
+    return res.data;
+  } catch (err) {
+    const status = err?.response?.status || 'ERR';
+    const message = err?.response?.data?.message || err.message;
+    throw new Error(`GitHub API error: ${status} ${message}`);
+  }
 }
 
-export { searchGithubRepos, searchGithubUsers, fetchUserDetails };
+export { searchGithubRepos, searchGithubUsers, fetchUserDetails, fetchUserData };
+// ...existing code...
