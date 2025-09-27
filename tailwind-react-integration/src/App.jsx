@@ -1,5 +1,5 @@
 
-import UserProfile from '/components'
+import UserProfile from './components/UserProfile'
 function App() {
  
 
