@@ -1,38 +1,30 @@
-// ...existing code...
+// HomePage.jsx
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";  // 👈 use Link for routing
+import recipesData from "../data.json";   // adjust path if needed
 
 const HomePage = () => {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Load data.json when component mounts
   useEffect(() => {
-    const controller = new AbortController();
-    const signal = controller.signal;
+    try {
+      setLoading(true);
+      setError(null);
 
-    async function loadData() {
-      try {
-        setLoading(true);
-        setError(null);
-        // Use PUBLIC_URL so the file is loaded correctly in dev and build
-        const res = await fetch("/data.json", { signal });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        // support both top-level array or { recipes: [...] } shape
-        setRecipes(Array.isArray(data) ? data : data.recipes ?? []);
-      } catch (err) {
-        if (err.name !== "AbortError") {
-          console.error("Error loading recipes:", err);
-          setError("Failed to load recipes.");
-        }
-      } finally {
-        if (!signal.aborted) setLoading(false);
-      }
+      // Support both top-level array or { recipes: [...] }
+      const data = Array.isArray(recipesData)
+        ? recipesData
+        : recipesData.recipes ?? [];
+
+      setRecipes(data);
+    } catch (err) {
+      console.error("Error loading recipes:", err);
+      setError("Failed to load recipes.");
+    } finally {
+      setLoading(false);
     }
-
-    loadData();
-    return () => controller.abort();
   }, []);
 
   const placeholder =
@@ -60,19 +52,22 @@ const HomePage = () => {
                 alt={recipe.title || "Recipe image"}
                 className="w-full h-48 object-cover rounded-t-lg"
                 onError={(e) => {
-                  // prevent infinite loop if placeholder fails
-                  if (e.currentTarget.src !== placeholder) e.currentTarget.src = placeholder;
+                  if (e.currentTarget.src !== placeholder) {
+                    e.currentTarget.src = placeholder;
+                  }
                 }}
               />
               <div className="p-4">
                 <h2 className="text-xl font-semibold mb-2">{recipe.title}</h2>
                 <p className="text-gray-600 mb-4">{recipe.summary}</p>
-                <a
-                  href={`/recipe/${recipe.id}`}
+
+                {/* 👇 use Link instead of <a> */}
+                <Link
+                  to={`/recipe/${recipe.id}`}
                   className="inline-block text-blue-600 font-medium hover:underline"
                 >
                   View Recipe →
-                </a>
+                </Link>
               </div>
             </div>
           ))}
@@ -83,4 +78,3 @@ const HomePage = () => {
 };
 
 export default HomePage;
-// ...existing code...
