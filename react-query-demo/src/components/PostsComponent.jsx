@@ -1,10 +1,10 @@
-// src/components/PostsComponent.jsx
 import React from "react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery } from "react-query"
 
+// Fetch function
 const fetchPosts = async () => {
   const res = await fetch("https://jsonplaceholder.typicode.com/posts")
-  if (!res.ok) throw new Error("Network response was not ok")
+  if (!res.ok) throw new Error("Failed to fetch posts")
   return res.json()
 }
 
@@ -15,23 +15,48 @@ export default function PostsComponent() {
     isError,
     error,
     refetch,
+    isFetching,
   } = useQuery({
     queryKey: ["posts"],
     queryFn: fetchPosts,
-    refetchOnWindowFocus: false, // ✅ prevents auto refetch on tab focus
-    keepPreviousData: true,      // ✅ keeps old data while refetching
+    refetchOnWindowFocus: false,
+    keepPreviousData: true,
+    staleTime: 1000 * 60 * 2, // 2 minutes
+    cacheTime: 1000 * 60 * 5, // 5 minutes
   })
 
   if (isLoading) return <p>Loading posts...</p>
-  if (isError) return <p>Error: {error.message}</p>
+  if (isError) return <p style={{ color: "red" }}>Error: {error.message}</p>
 
   return (
     <div>
-      <h2>Posts</h2>
-      <button onClick={() => refetch()}>Refetch Posts</button>
-      <ul>
-        {posts.map((post) => (
-          <li key={post.id}>
+      <button
+        onClick={() => refetch()}
+        style={{
+          marginBottom: "15px",
+          padding: "10px 15px",
+          backgroundColor: "#4CAF50",
+          color: "white",
+          border: "none",
+          borderRadius: "5px",
+          cursor: "pointer",
+        }}
+      >
+        {isFetching ? "Refreshing..." : "Refetch Posts"}
+      </button>
+
+      <ul style={{ listStyleType: "none", padding: 0 }}>
+        {posts.slice(0, 10).map((post) => (
+          <li
+            key={post.id}
+            style={{
+              marginBottom: "15px",
+              padding: "10px",
+              border: "1px solid #ddd",
+              borderRadius: "8px",
+              backgroundColor: "#fafafa",
+            }}
+          >
             <strong>{post.title}</strong>
             <p>{post.body}</p>
           </li>
