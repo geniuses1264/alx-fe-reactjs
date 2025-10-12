@@ -1,11 +1,11 @@
+// src/components/PostsComponent.jsx
 import React from "react"
-import { useQuery } from "react-query"
+import { useQuery } from "@tanstack/react-query"
 
-// Function to fetch posts
 const fetchPosts = async () => {
-  const response = await fetch("https://jsonplaceholder.typicode.com/posts")
-  if (!response.ok) throw new Error("Network response was not ok")
-  return response.json()
+  const res = await fetch("https://jsonplaceholder.typicode.com/posts")
+  if (!res.ok) throw new Error("Network response was not ok")
+  return res.json()
 }
 
 export default function PostsComponent() {
@@ -15,10 +15,11 @@ export default function PostsComponent() {
     isError,
     error,
     refetch,
-    isFetching,
-  } = useQuery("posts", fetchPosts, {
-    staleTime: 5000, // data stays fresh for 5 seconds
-    cacheTime: 10000, // cached data kept for 10 seconds
+  } = useQuery({
+    queryKey: ["posts"],
+    queryFn: fetchPosts,
+    refetchOnWindowFocus: false, // ✅ prevents auto refetch on tab focus
+    keepPreviousData: true,      // ✅ keeps old data while refetching
   })
 
   if (isLoading) return <p>Loading posts...</p>
@@ -26,12 +27,10 @@ export default function PostsComponent() {
 
   return (
     <div>
-      <button onClick={() => refetch()} disabled={isFetching}>
-        {isFetching ? "Refreshing..." : "Refetch Posts"}
-      </button>
-
-      <ul style={{ marginTop: "20px" }}>
-        {posts.slice(0, 10).map((post) => (
+      <h2>Posts</h2>
+      <button onClick={() => refetch()}>Refetch Posts</button>
+      <ul>
+        {posts.map((post) => (
           <li key={post.id}>
             <strong>{post.title}</strong>
             <p>{post.body}</p>
